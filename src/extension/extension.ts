@@ -97,6 +97,18 @@ function getConfiguredShinyOdds(): number {
     .get<number>('shinyOdds', 8192);
 }
 
+function getConfiguredAutoSpawnOnWordCount(): boolean {
+  return vscode.workspace
+    .getConfiguration('vscode-pokemon')
+    .get<boolean>('autoSpawnOnWordCount', false);
+}
+
+function getConfiguredAutoSpawnWordCount(): number {
+  return vscode.workspace
+    .getConfiguration('vscode-pokemon')
+    .get<number>('autoSpawnWordCount', 100);
+}
+
 function maybeMakeShiny(possibleColors: PokemonColor[]): PokemonColor {
   if (possibleColors.includes(PokemonColor.shiny)) {
     const shinyOdds = getConfiguredShinyOdds();
@@ -200,6 +212,29 @@ function updatePanelThrowWithMouse(): void {
   if (panel !== undefined) {
     panel.setThrowWithMouse(getThrowWithMouseConfiguration());
   }
+}
+
+async function spawnRandomPokemonSilently(
+  context: vscode.ExtensionContext,
+): Promise<void> {
+  const panel = getPokemonPanel();
+  if (!panel) {
+    return;
+  }
+  const [randomPokemonType, randomPokemonConfig] = getRandomPokemonConfig();
+  const spec = new PokemonSpecification(
+    maybeMakeShiny(randomPokemonConfig.possibleColors),
+    randomPokemonType,
+    getConfiguredSize(),
+    randomPokemonConfig.name,
+  );
+  panel.spawnPokemon(spec);
+  const collection = PokemonSpecification.collectionFromMemento(
+    context,
+    getConfiguredSize(),
+  );
+  collection.push(spec);
+  await storeCollectionAsMemento(context, collection);
 }
 
 async function updateExtensionPositionContext() {
@@ -310,6 +345,7 @@ export async function storeCollectionAsMemento(
 }
 
 let spawnPokemonStatusBar: vscode.StatusBarItem;
+let wordCountAccumulator = 0;
 
 interface IPokemonInfo {
   type: PokemonType;
@@ -456,6 +492,24 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTextEditor(updateExtensionPositionContext),
+  );
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument((event) => {
+      if (!getConfiguredAutoSpawnOnWordCount()) {
+        return;
+      }
+      const threshold = getConfiguredAutoSpawnWordCount();
+      for (const change of event.contentChanges) {
+        const words = change.text
+          .split(/\s+/)
+          .filter((token) => token.length > 0);
+        wordCountAccumulator += words.length;
+      }
+      if (wordCountAccumulator >= threshold) {
+        wordCountAccumulator = 0;
+        void spawnRandomPokemonSilently(context);
+      }
+    }),
   );
   updateStatusBar();
 
@@ -1054,6 +1108,12 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (e.affectsConfiguration('vscode-pokemon.throwBallWithMouse')) {
           updatePanelThrowWithMouse();
+        }
+
+        if (e.affectsConfiguration('vscode-pokemon.autoSpawnOnWordCount')) {
+          if (!getConfiguredAutoSpawnOnWordCount()) {
+            wordCountAccumulator = 0;
+          }
         }
 
         if (e.affectsConfiguration('vscode-pokemon.pokemonLanguage')) {

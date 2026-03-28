@@ -241,6 +241,17 @@
                         ],
                         "default": "auto",
                         "description": "Language for Pokemon names. 'auto' uses VS Code's language, or you can choose a specific language (e.g., 'fr-FR' for French, 'en-US' for English, 'de-DE' for German, 'ja-JP' for Japanese). Only official Pokemon languages are supported."
+                    },
+                    "vscode-pokemon.autoSpawnOnWordCount": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "When enabled, automatically spawns a random Pokémon after typing a configured number of words."
+                    },
+                    "vscode-pokemon.autoSpawnWordCount": {
+                        "type": "number",
+                        "default": 100,
+                        "minimum": 1,
+                        "description": "Number of words to type before a Pokémon auto-spawns. Only active when 'autoSpawnOnWordCount' is enabled."
                     }
                 }
             }
