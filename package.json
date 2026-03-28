@@ -252,6 +252,19 @@
                         "default": 100,
                         "minimum": 1,
                         "description": "Number of words to type before a Pokémon auto-spawns. Only active when 'autoSpawnOnWordCount' is enabled."
+                    },
+                    "vscode-pokemon.randomSpawnGeneration": {
+                        "type": "string",
+                        "enum": ["any", "1", "2", "3", "4"],
+                        "enumDescriptions": [
+                            "Spawn from any generation",
+                            "Generation 1 (Kanto)",
+                            "Generation 2 (Johto)",
+                            "Generation 3 (Hoenn)",
+                            "Generation 4 (Sinnoh)"
+                        ],
+                        "default": "any",
+                        "description": "Which generation random Pokémon are picked from (auto-spawn and on-demand random spawn)."
                     }
                 }
             }

@@ -14,6 +14,7 @@ import {
   ALL_THEMES,
   ExtPosition,
   PokemonColor,
+  PokemonConfig,
   PokemonGeneration,
   PokemonSize,
   PokemonType,
@@ -107,6 +108,25 @@ function getConfiguredAutoSpawnWordCount(): number {
   return vscode.workspace
     .getConfiguration('vscode-pokemon')
     .get<number>('autoSpawnWordCount', 100);
+}
+
+function getConfiguredRandomSpawnGeneration(): 'any' | '1' | '2' | '3' | '4' {
+  return vscode.workspace
+    .getConfiguration('vscode-pokemon')
+    .get<'any' | '1' | '2' | '3' | '4'>('randomSpawnGeneration', 'any');
+}
+
+function getRandomPokemonConfigFiltered(): [PokemonType, PokemonConfig] {
+  const gen = getConfiguredRandomSpawnGeneration();
+  if (gen === 'any') {
+    return getRandomPokemonConfig();
+  }
+  const pokemonInGen = getPokemonByGeneration(
+    Number(gen) as PokemonGeneration,
+  );
+  const randomType =
+    pokemonInGen[Math.floor(Math.random() * pokemonInGen.length)];
+  return [randomType, POKEMON_DATA[randomType]];
 }
 
 function maybeMakeShiny(possibleColors: PokemonColor[]): PokemonColor {
@@ -221,7 +241,7 @@ async function spawnRandomPokemonSilently(
   if (!panel) {
     return;
   }
-  const [randomPokemonType, randomPokemonConfig] = getRandomPokemonConfig();
+  const [randomPokemonType, randomPokemonConfig] = getRandomPokemonConfigFiltered();
   const spec = new PokemonSpecification(
     maybeMakeShiny(randomPokemonConfig.possibleColors),
     randomPokemonType,
@@ -1053,7 +1073,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
         if (panel) {
           var [randomPokemonType, randomPokemonConfig] =
-            getRandomPokemonConfig();
+            getRandomPokemonConfigFiltered();
           const spec = new PokemonSpecification(
             maybeMakeShiny(randomPokemonConfig.possibleColors),
             randomPokemonType,
